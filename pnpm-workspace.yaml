@@ -1,0 +1,32 @@
+packages:
+  - 'apps/*'
+  - 'packages/*'
+
+catalog:
+  typescript: ^5.9.3
+  zod: ^4.6.0
+  '@types/node': ^24.0.0
+  eslint: ^9.39.0
+
+onlyBuiltDependencies:
+  - prisma
+  - '@prisma/engines'
+  - '@prisma/client'
+  - sharp
+  - unrs-resolver
+
+neverBuiltDependencies:
+  - '@nestjs/core'
+
+minimumReleaseAgeExclude:
+  - react-dom@19.3.0
+  - react@19.3.0
+  - scheduler@0.28.0
+  - zod@4.6.0
+
+allowBuilds:
+  '@parcel/watcher': true
+  '@prisma/engines': true
+  '@scarf/scarf': false
+  prisma: true
+  unrs-resolver: true

@@ -1,0 +1,7 @@
+{
+  "extends": "@expense-tracker/typescript-config/library.json",
+  "compilerOptions": {
+    "outDir": "./dist"
+  },
+  "include": ["src", "tsdown.config.ts"]
+}

@@ -1,0 +1,27 @@
+{
+  "name": "expense-tracker",
+  "private": true,
+  "packageManager": "pnpm@11.26.0",
+  "engines": {
+    "node": ">=24.11"
+  },
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "db:up": "docker compose up -d",
+    "db:down": "docker compose down",
+    "db:generate": "pnpm --filter @expense-tracker/api db:generate",
+    "db:migrate": "pnpm --filter @expense-tracker/api db:migrate",
+    "db:studio": "pnpm --filter @expense-tracker/api db:studio"
+  },
+  "devDependencies": {
+    "turbo": "^2.10.0",
+    "prettier": "^3.9.0",
+    "prettier-plugin-tailwindcss": "^0.6.0"
+  }
+}

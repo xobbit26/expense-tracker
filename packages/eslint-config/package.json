@@ -1,0 +1,27 @@
+{
+  "name": "@expense-tracker/eslint-config",
+  "version": "0.0.0",
+  "private": true,
+  "license": "UNLICENSED",
+  "type": "module",
+  "files": [
+    "base.js",
+    "nest.js",
+    "next.js"
+  ],
+  "exports": {
+    "./base": "./base.js",
+    "./nest": "./nest.js",
+    "./next": "./next.js"
+  },
+  "dependencies": {
+    "@eslint/js": "^9.39.0",
+    "typescript-eslint": "^8.70.0",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-config-next": "16.3.4",
+    "globals": "^15.15.0"
+  },
+  "peerDependencies": {
+    "eslint": "catalog:"
+  }
+}

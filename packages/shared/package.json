@@ -1,0 +1,41 @@
+{
+  "name": "@expense-tracker/shared",
+  "version": "0.0.0",
+  "private": true,
+  "license": "UNLICENSED",
+  "type": "module",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.mts",
+        "default": "./dist/index.mjs"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    }
+  },
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.mts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsdown",
+    "dev": "tsdown --watch",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@expense-tracker/eslint-config": "workspace:*",
+    "@expense-tracker/typescript-config": "workspace:*",
+    "eslint": "catalog:",
+    "tsdown": "^0.23.0",
+    "typescript": "catalog:"
+  }
+}

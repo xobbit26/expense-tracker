@@ -1,0 +1,16 @@
+node_modules/
+dist/
+.next/
+.turbo/
+coverage/
+*.tsbuildinfo
+.env*
+!.env.example
+
+apps/api/src/generated/
+next-env.d.ts
+
+.idea/
+.DS_Store
+
+.claude/settings.local.json

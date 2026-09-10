@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(pnpm *)",
+      "Bash(git status)",
+      "Bash(git diff *)",
+      "Bash(git log *)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git branch *)",
+      "Bash(git checkout *)",
+      "Bash(docker compose *)",
+      "Bash(node --check *)",
+      "Bash(node -e *)"
+    ]
+  }
+}
