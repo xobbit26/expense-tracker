@@ -1,6 +1,10 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { AuthResponse, LoginRequest, RegisterRequest } from '@expense-tracker/shared';
+import {
+  AuthResponse,
+  LoginRequest,
+  RegisterRequest,
+} from '@expense-tracker/shared';
 import * as argon2 from 'argon2';
 
 import { User } from '../generated/prisma/client.js';

@@ -10,7 +10,9 @@ describe('JwtAuthGuard', () => {
   let jwtService: { verifyAsync: jest.Mock };
   let reflector: { getAllAndOverride: jest.Mock };
 
-  const buildContext = (headers: Record<string, string> = {}): {
+  const buildContext = (
+    headers: Record<string, string> = {},
+  ): {
     context: ExecutionContext;
     request: Partial<AuthenticatedRequest>;
   } => {
@@ -62,7 +64,9 @@ describe('JwtAuthGuard', () => {
       sub: 'a5f6c1b0-1d2e-4f3a-9c8b-7e6d5f4a3b2c',
       email: 'user@example.com',
     });
-    const { context, request } = buildContext({ authorization: 'Bearer valid' });
+    const { context, request } = buildContext({
+      authorization: 'Bearer valid',
+    });
 
     await expect(guard.canActivate(context)).resolves.toBe(true);
     expect(request.user).toEqual({

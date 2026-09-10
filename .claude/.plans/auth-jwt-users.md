@@ -3,10 +3,12 @@
 ## Context
 
 В API сейчас есть только health-check, моделей в Prisma нет, зависимостей для авторизации нет. Нужно добавить:
+
 - модуль пользователей (repository поверх Prisma + service с логикой пользователя);
 - отдельный модуль авторизации с JWT и эндпоинтами `register` / `login`.
 
 Решения, согласованные с пользователем:
+
 - **только access-токен** (без refresh), TTL из env;
 - **argon2** для хеширования паролей;
 - **глобальный `JwtAuthGuard`** + декоратор `@Public()` для открытых роутов.
@@ -73,7 +75,7 @@ model User {
 - `auth.controller.ts` — `@Controller('auth')` + `@Public()` на классе:
   - `POST /api/auth/register` → `@ZodResponse({ status: 201, type: AuthResponseDto })`;
   - `POST /api/auth/login` → `@HttpCode(200)` + `@ZodResponse({ status: 200, type: AuthResponseDto })`.
-  `ZodResponse` (из `nestjs-zod`) даёт и Swagger-описание, и сериализацию через глобальный `ZodSerializerInterceptor` — лишние поля отрежутся.
+    `ZodResponse` (из `nestjs-zod`) даёт и Swagger-описание, и сериализацию через глобальный `ZodSerializerInterceptor` — лишние поля отрежутся.
 - `decorators/public.decorator.ts` — `IS_PUBLIC_KEY` + `Public = () => SetMetadata(IS_PUBLIC_KEY, true)`.
 - `decorators/current-user.decorator.ts` — `createParamDecorator`, возвращает `request.user` типа `AuthUser = { id: string; email: string }`.
 - `jwt-auth.guard.ts` — `CanActivate`, без passport:
@@ -92,16 +94,18 @@ model User {
 ## 7. Тесты
 
 Unit (`apps/api/src/**`, мокаются зависимости как в `health.controller.spec.ts`):
+
 - `auth/auth.service.spec.ts` — register хеширует пароль (хеш ≠ пароль, `argon2.verify` проходит) и возвращает токен; login успешен; неверный пароль → 401; неизвестный email → 401.
 - `auth/jwt-auth.guard.spec.ts` — публичный роут пропускается; нет заголовка → 401; невалидный токен → 401; валидный токен → `request.user` заполнен.
 - `users/users.service.spec.ts` — ошибка `P2002` из репозитория → `ConflictException`; email нормализуется; `toPublic` не содержит `passwordHash`.
 
 E2E `apps/api/test/auth.e2e-spec.ts` (как `health.e2e-spec.ts`: `overrideProvider(PrismaService)` фейком `user.create/findUnique` на `Map`, `setGlobalPrefix('api')`):
+
 - register → 201 с `accessToken` и `user` без `passwordHash`;
 - повторный register → 409; невалидное тело → 400;
 - login → 200; неверный пароль → 401;
 - `GET /api/users/me` с токеном → 200, без токена → 401.
-Существующий `health.e2e-spec.ts` должен продолжать проходить (роут `@Public()`).
+  Существующий `health.e2e-spec.ts` должен продолжать проходить (роут `@Public()`).
 
 ## Verification
 
