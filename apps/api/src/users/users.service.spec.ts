@@ -7,7 +7,11 @@ import { UsersService } from './users.service.js';
 
 describe('UsersService', () => {
   let service: UsersService;
-  let repository: { create: jest.Mock; findByEmail: jest.Mock; findById: jest.Mock };
+  let repository: {
+    create: jest.Mock;
+    findByEmail: jest.Mock;
+    findById: jest.Mock;
+  };
 
   const user: User = {
     id: 'a5f6c1b0-1d2e-4f3a-9c8b-7e6d5f4a3b2c',

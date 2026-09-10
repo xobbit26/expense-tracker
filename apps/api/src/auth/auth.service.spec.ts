@@ -18,7 +18,12 @@ describe('AuthService', () => {
 
   const password = 'super-secret-1';
   let user: User;
-  let publicUser: { id: string; email: string; name: string; createdAt: string };
+  let publicUser: {
+    id: string;
+    email: string;
+    name: string;
+    createdAt: string;
+  };
 
   beforeEach(async () => {
     user = {

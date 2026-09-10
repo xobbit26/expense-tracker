@@ -1,52 +1,11 @@
-import { randomUUID } from 'node:crypto';
-
 import { INestApplication } from '@nestjs/common';
 import { Test, TestingModule } from '@nestjs/testing';
 import { AuthResponse } from '@expense-tracker/shared';
 import request from 'supertest';
 
 import { AppModule } from '../src/app.module.js';
-import { Prisma, User } from '../src/generated/prisma/client.js';
 import { PrismaService } from '../src/prisma/prisma.service.js';
-
-class FakePrismaService {
-  private readonly users = new Map<string, User>();
-
-  user = {
-    create: ({ data }: { data: Omit<User, 'id' | 'createdAt' | 'updatedAt'> }) => {
-      const existing = [...this.users.values()].some(
-        (user) => user.email === data.email,
-      );
-      if (existing) {
-        throw new Prisma.PrismaClientKnownRequestError(
-          'Unique constraint failed on the fields: (`email`)',
-          { code: 'P2002', clientVersion: '7.10.0' },
-        );
-      }
-      const user: User = {
-        id: randomUUID(),
-        ...data,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
-      this.users.set(user.id, user);
-      return Promise.resolve(user);
-    },
-    findUnique: ({
-      where,
-    }: {
-      where: { id?: string; email?: string };
-    }) => {
-      if (where.id) {
-        return Promise.resolve(this.users.get(where.id) ?? null);
-      }
-      const byEmail = [...this.users.values()].find(
-        (user) => user.email === where.email,
-      );
-      return Promise.resolve(byEmail ?? null);
-    },
-  };
-}
+import { FakePrismaService } from './fake-prisma.service.js';
 
 describe('Auth (e2e)', () => {
   let app: INestApplication;

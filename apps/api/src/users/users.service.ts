@@ -1,7 +1,11 @@
 import { ConflictException, Injectable } from '@nestjs/common';
 import { User as SharedUser } from '@expense-tracker/shared';
 
-import { Prisma, User } from '../generated/prisma/client.js';
+import { User } from '../generated/prisma/client.js';
+import {
+  isPrismaError,
+  PRISMA_UNIQUE_CONSTRAINT_CODE,
+} from '../prisma/prisma-errors.js';
 import { UsersRepository } from './users.repository.js';
 
 export interface CreateUserInput {
@@ -9,8 +13,6 @@ export interface CreateUserInput {
   name: string;
   passwordHash: string;
 }
-
-const PRISMA_UNIQUE_CONSTRAINT_CODE = 'P2002';
 
 @Injectable()
 export class UsersService {
@@ -23,10 +25,7 @@ export class UsersService {
         email: normalizeEmail(input.email),
       });
     } catch (error) {
-      if (
-        error instanceof Prisma.PrismaClientKnownRequestError &&
-        error.code === PRISMA_UNIQUE_CONSTRAINT_CODE
-      ) {
+      if (isPrismaError(error, PRISMA_UNIQUE_CONSTRAINT_CODE)) {
         throw new ConflictException('Email already registered');
       }
       throw error;

@@ -64,6 +64,8 @@ Swagger docs are cleaned up with `cleanupOpenApiDoc` from **`nestjs-zod`** (not 
 - Connection uses `@prisma/adapter-pg` (`PrismaPg`) instead of a `DATABASE_URL` binary engine — `PrismaService` (`apps/api/src/prisma/prisma.service.ts`) builds the adapter from `ConfigService` and is a `@Global()` module, so it's injectable anywhere without re-importing `PrismaModule`.
 - `apps/api/prisma.config.ts` loads `DATABASE_URL` via `dotenv/config` — required for `prisma generate`/`migrate` CLI to see the env var outside of Nest's `ConfigModule`.
 - `User` (`apps/api/prisma/schema.prisma`) is the first domain model — `email`/`name`/`passwordHash` plus timestamps, mapped to a `users` table. Add further models the same way and run `pnpm db:migrate`.
+- `Category` (`apps/api/prisma/schema.prisma`) belongs to a `User` (`onDelete: Cascade`) and is unique per `[userId, name]` (`@@unique`) — duplicate names for the same user map to a 409, see `apps/api/src/categories/categories.service.ts`.
+- `apps/api/src/prisma/prisma-errors.ts` — `isPrismaError(error, code)` plus `PRISMA_UNIQUE_CONSTRAINT_CODE`/`PRISMA_RECORD_NOT_FOUND_CODE` constants, shared by `UsersService` and `CategoriesService` to map `P2002`/`P2025` to `ConflictException`/`NotFoundException`. Reuse this instead of re-checking `Prisma.PrismaClientKnownRequestError` codes inline.
 
 ### Non-obvious gotchas
 
