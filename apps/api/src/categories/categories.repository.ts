@@ -21,7 +21,7 @@ export class CategoriesRepository {
 
   findManyByUserId(userId: string): Promise<Category[]> {
     return this.prisma.category.findMany({
-      where: { userId },
+      where: { userId, deletedAt: null },
       orderBy: { createdAt: 'asc' },
     });
   }
@@ -31,10 +31,16 @@ export class CategoriesRepository {
     id: string,
     data: UpdateCategoryData,
   ): Promise<Category> {
-    return this.prisma.category.update({ where: { id, userId }, data });
+    return this.prisma.category.update({
+      where: { id, userId, deletedAt: null },
+      data,
+    });
   }
 
-  delete(userId: string, id: string): Promise<Category> {
-    return this.prisma.category.delete({ where: { id, userId } });
+  archive(userId: string, id: string): Promise<Category> {
+    return this.prisma.category.update({
+      where: { id, userId, deletedAt: null },
+      data: { deletedAt: new Date() },
+    });
   }
 }

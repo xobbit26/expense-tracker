@@ -56,7 +56,7 @@ export class CategoriesService {
 
   async remove(userId: string, id: string): Promise<void> {
     try {
-      await this.categoriesRepository.delete(userId, id);
+      await this.categoriesRepository.archive(userId, id);
     } catch (error) {
       if (isPrismaError(error, PRISMA_RECORD_NOT_FOUND_CODE)) {
         throw new NotFoundException('Category not found');

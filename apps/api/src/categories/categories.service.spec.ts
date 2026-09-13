@@ -11,7 +11,7 @@ describe('CategoriesService', () => {
     create: jest.Mock;
     findManyByUserId: jest.Mock;
     update: jest.Mock;
-    delete: jest.Mock;
+    archive: jest.Mock;
   };
 
   const userId = 'a5f6c1b0-1d2e-4f3a-9c8b-7e6d5f4a3b2c';
@@ -24,6 +24,7 @@ describe('CategoriesService', () => {
     icon: 'utensils',
     createdAt: new Date('2024-01-01T00:00:00.000Z'),
     updatedAt: new Date('2024-01-01T00:00:00.000Z'),
+    deletedAt: null,
   };
 
   const uniqueConstraintError = new Prisma.PrismaClientKnownRequestError(
@@ -41,7 +42,7 @@ describe('CategoriesService', () => {
       create: jest.fn(),
       findManyByUserId: jest.fn(),
       update: jest.fn(),
-      delete: jest.fn(),
+      archive: jest.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -117,15 +118,15 @@ describe('CategoriesService', () => {
 
   describe('remove', () => {
     it('maps a record-not-found error to NotFoundException', async () => {
-      repository.delete.mockRejectedValue(recordNotFoundError);
+      repository.archive.mockRejectedValue(recordNotFoundError);
 
       await expect(service.remove(userId, category.id)).rejects.toBeInstanceOf(
         NotFoundException,
       );
     });
 
-    it('resolves when the repository deletes successfully', async () => {
-      repository.delete.mockResolvedValue(category);
+    it('resolves when the repository archives successfully', async () => {
+      repository.archive.mockResolvedValue(category);
 
       await expect(
         service.remove(userId, category.id),

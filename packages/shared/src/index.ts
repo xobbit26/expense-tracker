@@ -16,3 +16,19 @@ export {
   type CreateCategoryRequest,
   type UpdateCategoryRequest,
 } from './schemas/category.js';
+export {
+  transactionTypeSchema,
+  transactionCategorySchema,
+  transactionSchema,
+  createTransactionRequestSchema,
+  updateTransactionRequestSchema,
+  transactionListQuerySchema,
+  transactionListResponseSchema,
+  type TransactionType,
+  type TransactionCategory,
+  type Transaction,
+  type CreateTransactionRequest,
+  type UpdateTransactionRequest,
+  type TransactionListQuery,
+  type TransactionListResponse,
+} from './schemas/transaction.js';
