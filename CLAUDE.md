@@ -45,7 +45,7 @@ Local Postgres runs on **port 5433** (not 5432) to avoid clashing with other loc
 
 This is a **pnpm workspaces + Turborepo monorepo** with three layers:
 
-- `apps/web` — Next.js 16 (App Router, `src/`), Tailwind CSS 4, shadcn/ui (`components.json`, style `new-york`)
+- `apps/web` — Next.js 16 (App Router), Tailwind CSS 4, shadcn/ui (`components.json`, style `new-york`), react-hook-form + zodResolver for forms, next-themes for dark mode. Frontend follows **Feature-Sliced Design** — see the dedicated section below.
 - `apps/api` — NestJS 11, Prisma 7 (via `@prisma/adapter-pg`, driver adapters, no `DATABASE_URL` needed at build time), `nestjs-zod`, Swagger
 - `packages/shared` — Zod schemas that define the API contract, built with `tsdown` to dual ESM+CJS (`dist/index.{mjs,cjs}` + `.d.{mts,cts}`), consumed by both apps as `@expense-tracker/shared`
 - `packages/typescript-config`, `packages/eslint-config` — shared `tsconfig`/`eslint.config.mjs` bases (`nestjs.json`/`nest.js`, `nextjs.json`/`next.js`, `library.json`, `base.json`/`base.js`), imported via package `exports`, not relative paths
@@ -54,7 +54,7 @@ This is a **pnpm workspaces + Turborepo monorepo** with three layers:
 
 1. Define a Zod schema in `packages/shared/src/schemas/*.ts`, export it from `packages/shared/src/index.ts`.
 2. In `apps/api`, wrap it with `createZodDto(...)` (see `src/health/health.dto.ts`) and use it as the controller's return type / `@ApiOkResponse({ type: ... })`. Validation and response serialization are wired globally in `app.module.ts` via `APP_PIPE: ZodValidationPipe` and `APP_INTERCEPTOR: ZodSerializerInterceptor` — no per-route decorators needed for basic cases.
-3. In `apps/web`, `.parse()` the same schema against the fetch response (see `src/app/page.tsx` + `src/lib/api.ts`) so the frontend and backend can never drift on shape.
+3. In `apps/web`, `.parse()` the same schema against the fetch response (see `src/entities/health` + `src/shared/api/api-client.ts`) so the frontend and backend can never drift on shape.
 
 Swagger docs are cleaned up with `cleanupOpenApiDoc` from **`nestjs-zod`** (not `@nestjs/swagger` — easy to import from the wrong package).
 
@@ -67,6 +67,37 @@ Swagger docs are cleaned up with `cleanupOpenApiDoc` from **`nestjs-zod`** (not 
 - `Category` (`apps/api/prisma/schema.prisma`) belongs to a `User` (`onDelete: Cascade`) and is unique per `[userId, name]` (`@@unique`) — duplicate names for the same user map to a 409, see `apps/api/src/categories/categories.service.ts`.
 - `apps/api/src/prisma/prisma-errors.ts` — `isPrismaError(error, code)` plus `PRISMA_UNIQUE_CONSTRAINT_CODE`/`PRISMA_RECORD_NOT_FOUND_CODE` constants, shared by `UsersService` and `CategoriesService` to map `P2002`/`P2025` to `ConflictException`/`NotFoundException`. Reuse this instead of re-checking `Prisma.PrismaClientKnownRequestError` codes inline.
 
+### Frontend: Feature-Sliced Design
+
+`apps/web` follows the official FSD layout for Next.js App Router:
+
+```
+apps/web/
+├── app/            # Next.js routing ONLY — every file re-exports from src/
+├── proxy.ts
+└── src/
+    ├── _app/       # root/auth layouts, providers, global styles
+    ├── _pages/     # one slice per route (composes widgets/features/entities)
+    ├── widgets/    # composite UI blocks (e.g. app-header)
+    ├── features/   # user actions (auth/login, auth/register, auth/logout, theme-toggle)
+    ├── entities/   # domain data (session, user, health)
+    └── shared/     # ui (shadcn), api, lib, config — no business logic
+```
+
+- Import rule: a layer may only import from layers **below** it (`app → pages → widgets → features → entities → shared`). Slices within the same layer never import each other directly (e.g. `features/auth/login` cannot import from `features/auth/register`).
+- A slice's public API is its `index.ts` — always import `@/entities/user`, never reach into `@/entities/user/model/...`.
+- Server-only code (cookies, `redirect`, anything importing `server-only`) is exported from a separate `index.server.ts` next to `index.ts`, so a client component can't accidentally pull it in through the barrel.
+- `app/` and `src/_app`/`src/_pages` are named with a leading underscore because Next.js reserves plain `src/app`/`src/pages` for its own router — the real router lives only in the root `app/` directory, which re-exports the default/`metadata` from the matching `_pages`/`_app` slice and contains no logic of its own.
+- Inside a feature, put server actions in `api/`, client components in `ui/`, and shared types in `model/`.
+- Add shadcn components from `apps/web` with `pnpm dlx shadcn@latest add <name>` — `components.json` aliases are wired to `@/shared/ui`, `@/shared/lib`, etc., so generated files land in the right slice automatically. shadcn's registry currently emits `import { cn } from "cn"` (a separate npm package) instead of the local util — replace that import with `@/shared/lib/utils` and drop the `cn` dependency after every `add`.
+
+### Frontend auth flow
+
+- The JWT lives in an **httpOnly** cookie (`access_token`, set by `entities/session`), never in browser-accessible JS — Server Actions call the API and set the cookie; Server Components read it and forward it as `Bearer` to the API.
+- `proxy.ts` (root of `apps/web`) does an **optimistic** check only: does the cookie exist and is it not obviously expired (decoded client-side via `shared/lib/jwt`, no signature check). It deliberately does **not** redirect away from `/login`/`/register` — the authoritative check for those pages is `redirectIfAuthenticated()`, which calls the real API. If `proxy.ts` also redirected off `/login`, a token that looks unexpired but was rejected by the API (e.g. after a `JWT_SECRET` rotation) would create a redirect loop.
+- `requireUser()` / `redirectIfAuthenticated()` (`entities/user/index.server.ts`) are the authoritative checks — they call `GET /users/me` and redirect based on the real response.
+- `getCurrentUser` is wrapped in React `cache()` so calling it from both a layout and a page in the same request only hits the API once.
+
 ### Non-obvious gotchas
 
 - **`nodenext` module resolution**: `apps/api` uses `moduleResolution: nodenext`, so relative imports in TS source use explicit `.js` extensions (e.g. `import { PrismaService } from '../prisma/prisma.service.js'`) even though the files are `.ts`. `ts-jest` does not resolve these on its own — both `apps/api/package.json`'s `jest` config and `apps/api/test/jest-e2e.json` have a `moduleNameMapper` (`"^(\\.{1,2}/.*)\\.js$": "$1"`) to strip the extension back. Keep this in mind if jest starts failing with "Cannot find module" after adding new relative imports.
@@ -75,3 +106,6 @@ Swagger docs are cleaned up with `cleanupOpenApiDoc` from **`nestjs-zod`** (not 
 - **`pnpm-workspace.yaml`** pins shared dependency versions via the `catalog:` protocol (`typescript`, `zod`, `@types/node`, `eslint`) — bump versions there, not per-package. It also lists `onlyBuiltDependencies`/`neverBuiltDependencies` and an `allowBuilds` map (pnpm's build-script approval); `pnpm approve-builds` may need re-running after adding a new native dependency.
 - Health check flow (`GET /api/health`, global prefix `api` set in `main.ts`) is the reference implementation for the whole contract-first + Prisma + global pipes pattern above — read `apps/api/src/health/*` and `apps/web/src/app/page.tsx` together when unsure how a new feature should be wired.
 - **Auth is global-by-default**: `AuthModule` (`apps/api/src/auth/`) registers `JwtAuthGuard` as an `APP_GUARD`, so every route requires a valid `Authorization: Bearer <token>` header unless the controller or handler is decorated with `@Public()` (see `apps/api/src/auth/decorators/public.decorator.ts`; `HealthController` and `AuthController` use it). New unauthenticated routes need this decorator explicitly. `@CurrentUser()` (`apps/api/src/auth/decorators/current-user.decorator.ts`) reads the `{ id, email }` payload the guard attaches to the request.
+- **`middleware.ts` → `proxy.ts`**: Next 16 renamed the middleware file convention to `proxy.ts` (same `NextRequest`/`NextResponse`/`config.matcher` API — a drop-in rename). Having both files present is a build error.
+- **`z.config(z.locales.ru())`** (`apps/web/src/shared/lib/zod-locale.ts`, imported once from `_app/providers`) sets zod's global error-message locale to Russian. This affects schemas imported from `@expense-tracker/shared` too, because `apps/web` and `packages/shared` resolve to the exact same `zod` instance (pinned via the `catalog:` protocol) — zod's locale config lives on `globalThis`, so there's only one config to set.
+- **`suppressHydrationWarning` on `<html>`** (`apps/web/src/_app/layouts/root-layout.tsx`): required because `next-themes` sets the `class` attribute on `<html>` before React hydrates, which would otherwise trip React's hydration mismatch warning.
