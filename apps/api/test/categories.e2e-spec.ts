@@ -153,4 +153,30 @@ describe('Categories (e2e)', () => {
       .set('Authorization', `Bearer ${ownerToken}`)
       .expect(404);
   });
+
+  it('does not list a deleted category', async () => {
+    const response = await request(app.getHttpServer())
+      .get('/api/categories')
+      .set('Authorization', `Bearer ${ownerToken}`)
+      .expect(200);
+
+    const body = response.body as Category[];
+    expect(body.find((category) => category.id === createdId)).toBeUndefined();
+  });
+
+  it('allows creating a category with the same name after deletion', () => {
+    return request(app.getHttpServer())
+      .post('/api/categories')
+      .set('Authorization', `Bearer ${ownerToken}`)
+      .send({ name: 'Groceries', color: '#ff8800', icon: 'utensils' })
+      .expect(201);
+  });
+
+  it('returns 404 when updating a deleted category', () => {
+    return request(app.getHttpServer())
+      .patch(`/api/categories/${createdId}`)
+      .set('Authorization', `Bearer ${ownerToken}`)
+      .send({ name: 'Resurrected' })
+      .expect(404);
+  });
 });
